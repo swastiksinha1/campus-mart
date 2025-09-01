@@ -410,6 +410,7 @@ let uploadedLostFoundFile = null;
 let uploadedTradeOfferFile = null;
 let selectedAvatarUrl = null;
 let emailVerificationInterval = null;
+let navigationHistory = ['home'];
 
 // --- DOM Elements ---
 const authModal = document.getElementById('auth-modal');
@@ -496,11 +497,15 @@ const showMessage = (msg, type = 'success') => {
   }, 5000);
 };
 
-const setActiveTab = (tabName) => {
+const setActiveTab = (tabName, isBackAction = false) => {
   window.scrollTo({ top: 0, behavior: 'smooth' });
   document.querySelectorAll('.nav-item').forEach(btn => btn.classList.toggle('active', btn.dataset.tab === tabName));
   document.querySelectorAll('[data-tab="profile"]').forEach(btn => btn.classList.toggle('ring-2', btn.dataset.tab === tabName));
   document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active', 'animate-tab-content'));
+
+  if (!isBackAction && navigationHistory[navigationHistory.length - 1] !== tabName) {
+      navigationHistory.push(tabName);
+  }
 
   if (offersUnsubscribe) offersUnsubscribe();
 
@@ -521,6 +526,26 @@ const setActiveTab = (tabName) => {
     setTimeout(() => activeTab.classList.add('animate-tab-content'), 10);
   }
 };
+
+const handleGoBack = () => {
+    if (navigationHistory.length > 1) {
+        navigationHistory.pop();
+        const previousTab = navigationHistory[navigationHistory.length - 1];
+        setActiveTab(previousTab, true);
+    } else {
+        setActiveTab('home');
+    }
+};
+
+const getBackButtonHTML = (text = 'Back') => {
+    if (navigationHistory.length <= 1 && navigationHistory[0] === 'home') return '';
+    return `
+    <button id="go-back-btn" class="mb-6 inline-flex items-center gap-2 px-4 py-2 bg-gray-200 dark:bg-gray-700 text-sm font-semibold rounded-lg animated-btn hover:bg-gray-300 dark:hover:bg-gray-600">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+        ${text}
+    </button>`;
+};
+
 
 const showConfirmModal = (message, onConfirm) => {
   confirmModalContent.innerHTML = `
@@ -905,6 +930,7 @@ const renderHomePage = () => {
 const renderBuyPage = () => {
   const container = document.getElementById('buy-tab');
   container.innerHTML = `
+    ${getBackButtonHTML('Back')}
     <h2 class="text-3xl font-bold text-gray-800 dark:text-white mb-6">Available Items</h2>
     <div id="filter-controls" class="bg-white dark:bg-gray-800 p-4 rounded-xl shadow-md mb-8 flex flex-col md:flex-row gap-4 items-center flex-wrap">
       <div class="relative flex-grow w-full md:w-auto">
@@ -975,6 +1001,7 @@ const renderBuyPage = () => {
 const renderTradePage = () => {
   const container = document.getElementById('trade-tab');
   container.innerHTML = `
+    ${getBackButtonHTML('Back')}
     <h2 class="text-3xl font-bold text-gray-800 dark:text-white mb-6">Items Available for Trade/Barter</h2>
     <div id="filter-controls" class="bg-white dark:bg-gray-800 p-4 rounded-xl shadow-md mb-8 flex flex-col md:flex-row gap-4 items-center flex-wrap">
       <div class="relative flex-grow w-full md:w-auto">
@@ -1190,10 +1217,7 @@ const renderProductDetailPage = (product) => {
 
   container.innerHTML = `
     <div class="container mx-auto p-4 sm:p-6">
-      <button id="back-to-buy-btn" class="mb-6 inline-flex items-center gap-2 px-4 py-2 bg-gray-200 dark:bg-gray-700 text-sm font-semibold rounded-lg animated-btn hover:bg-gray-300 dark:hover:bg-gray-600">
-        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
-        Back to Listings
-      </button>
+      ${getBackButtonHTML('Back to Listings')}
       <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden">
         <div class="grid md:grid-cols-2">
           <div class="p-4">
@@ -1230,18 +1254,16 @@ const renderProductDetailPage = (product) => {
   if (isMyProduct && product.isTradeable && product.status === 'available') {
     renderSellerOffersView(product.id);
   }
-
-  document.getElementById('back-to-buy-btn').addEventListener('click', () => {
-    const previousTab = document.referrer.includes('orders') ? 'orders' : 'buy';
-    setActiveTab(previousTab);
-  });
 };
 
 const renderSellPage = () => {
   const container = document.getElementById('sell-tab');
   uploadedProductFile = null;
   container.innerHTML = `
-    <div class="flex flex-col justify-center items-center min-h-[calc(100vh-200px)] py-8">
+    <div class="w-full max-w-2xl mx-auto">
+        ${getBackButtonHTML('Back')}
+    </div>
+    <div class="flex flex-col justify-center items-center min-h-[calc(100vh-280px)] py-8">
       <h2 class="text-3xl font-bold text-gray-800 dark:text-white mb-8">List a New Item</h2>
       <form id="add-product-form" class="bg-white dark:bg-gray-800 p-8 rounded-xl shadow-lg space-y-4 w-full max-w-2xl mx-auto" novalidate>
         <div>
@@ -1292,6 +1314,7 @@ const renderSellPage = () => {
 const renderLostAndFoundPage = () => {
   const container = document.getElementById('lost-and-found-tab');
   container.innerHTML = `
+    ${getBackButtonHTML('Back')}
     <div class="flex flex-col md:flex-row justify-between items-center mb-8 gap-4">
       <h2 class="text-3xl font-bold text-gray-800 dark:text-white">Lost & Found</h2>
       <div class="flex space-x-4">
@@ -1427,7 +1450,9 @@ const renderLostAndFoundModal = (reportType = 'lost') => {
 
 const renderOrdersPage = () => {
   const container = document.getElementById('orders-tab');
-  let content = `<h2 class="text-3xl font-bold text-gray-800 dark:text-white mb-8">My Order History</h2>`;
+  let content = `
+    ${getBackButtonHTML('Back')}
+    <h2 class="text-3xl font-bold text-gray-800 dark:text-white mb-8">My Order History</h2>`;
   if (orders.length === 0) {
     content += `<div class="bg-white dark:bg-gray-800 p-8 rounded-xl shadow-lg text-center"><p class="text-gray-500">You haven't placed any orders yet. Time to shop! 🛍️</p></div>`;
   } else {
@@ -1478,7 +1503,9 @@ const renderMyListingsPage = () => {
   const availableItems = myListings.filter(p => p.status === 'available');
   const soldItems = myListings.filter(p => p.status === 'sold' || p.status === 'traded');
 
-  let content = `<h2 class="text-3xl font-bold text-gray-800 dark:text-white mb-8">My Listings</h2>`;
+  let content = `
+    ${getBackButtonHTML('Back')}
+    <h2 class="text-3xl font-bold text-gray-800 dark:text-white mb-8">My Listings</h2>`;
 
   if (myListings.length === 0) {
     content += `<div class="bg-white dark:bg-gray-800 p-8 rounded-xl shadow-lg text-center"><p class="text-gray-500">You haven't listed any items for sale yet.</p></div>`;
@@ -1524,37 +1551,40 @@ const renderProfilePage = () => {
     : `<div class="h-24 w-24 bg-primary-100 dark:bg-primary-800 rounded-full flex items-center justify-center font-bold text-4xl text-primary-600 dark:text-primary-200 ring-4 ring-primary-300 dark:ring-primary-600">${getInitials(currentUser.displayName)}</div>`;
 
   container.innerHTML = `
-    <div class="max-w-4xl mx-auto space-y-8">
-      <h2 class="text-3xl font-bold text-gray-800 dark:text-white mb-8">My Profile</h2>
-      <div class="bg-white dark:bg-gray-800 p-6 sm:p-8 rounded-xl shadow-lg flex flex-col sm:flex-row items-center gap-6">
-        <div class="relative profile-pic-container">${profileIcon}</div>
-        <div class="flex-grow text-center sm:text-left">
-          <h3 class="text-2xl font-bold text-gray-800 dark:text-white">${currentUser.displayName}</h3>
-          <p class="text-gray-500 dark:text-gray-400">${currentUser.email}</p>
-          <button id="change-pic-btn" class="mt-3 animated-btn px-4 py-2 bg-gray-200 dark:bg-gray-700 text-sm font-semibold rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600">Change Picture</button>
+    <div class="max-w-4xl mx-auto">
+        ${getBackButtonHTML('Back')}
+        <div class="space-y-8">
+            <h2 class="text-3xl font-bold text-gray-800 dark:text-white">My Profile</h2>
+            <div class="bg-white dark:bg-gray-800 p-6 sm:p-8 rounded-xl shadow-lg flex flex-col sm:flex-row items-center gap-6">
+                <div class="relative profile-pic-container">${profileIcon}</div>
+                <div class="flex-grow text-center sm:text-left">
+                    <h3 class="text-2xl font-bold text-gray-800 dark:text-white">${currentUser.displayName}</h3>
+                    <p class="text-gray-500 dark:text-gray-400">${currentUser.email}</p>
+                    <button id="change-pic-btn" class="mt-3 animated-btn px-4 py-2 bg-gray-200 dark:bg-gray-700 text-sm font-semibold rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600">Change Picture</button>
+                </div>
+            </div>
+            <div class="bg-white dark:bg-gray-800 p-6 sm:p-8 rounded-xl shadow-lg">
+                <h3 class="text-xl font-bold text-gray-800 dark:text-white mb-4">Account Details</h3>
+                <form id="update-profile-form" class="space-y-4" novalidate>
+                    <div>
+                        <label for="profile-name" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Full Name</label>
+                        <input type="text" id="profile-name" value="${currentUser.displayName || ''}" class="mt-1 w-full p-3 border dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-700" required>
+                    </div>
+                    <div>
+                        <label for="profile-email" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Email Address</label>
+                        <input type="email" id="profile-email" value="${currentUser.email}" class="mt-1 w-full p-3 border dark:border-gray-600 rounded-lg bg-gray-100 dark:bg-gray-900/50 cursor-not-allowed" disabled>
+                    </div>
+                    <div class="text-right"><button type="submit" id="update-profile-btn" class="animated-btn px-5 py-2 bg-primary-600 text-white rounded-lg font-semibold">Save Changes</button></div>
+                </form>
+            </div>
+            <div class="bg-white dark:bg-gray-800 p-6 sm:p-8 rounded-xl shadow-lg">
+                <h3 class="text-xl font-bold text-gray-800 dark:text-white mb-4">Security</h3>
+                <div class="flex justify-between items-center">
+                    <p>Change your password.</p>
+                    <button id="change-password-btn" class="animated-btn px-5 py-2 bg-gray-200 dark:bg-gray-700 text-sm font-semibold rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600">Change Password</button>
+                </div>
+            </div>
         </div>
-      </div>
-      <div class="bg-white dark:bg-gray-800 p-6 sm:p-8 rounded-xl shadow-lg">
-        <h3 class="text-xl font-bold text-gray-800 dark:text-white mb-4">Account Details</h3>
-        <form id="update-profile-form" class="space-y-4" novalidate>
-          <div>
-            <label for="profile-name" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Full Name</label>
-            <input type="text" id="profile-name" value="${currentUser.displayName || ''}" class="mt-1 w-full p-3 border dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-700" required>
-          </div>
-          <div>
-            <label for="profile-email" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Email Address</label>
-            <input type="email" id="profile-email" value="${currentUser.email}" class="mt-1 w-full p-3 border dark:border-gray-600 rounded-lg bg-gray-100 dark:bg-gray-900/50 cursor-not-allowed" disabled>
-          </div>
-          <div class="text-right"><button type="submit" id="update-profile-btn" class="animated-btn px-5 py-2 bg-primary-600 text-white rounded-lg font-semibold">Save Changes</button></div>
-        </form>
-      </div>
-      <div class="bg-white dark:bg-gray-800 p-6 sm:p-8 rounded-xl shadow-lg">
-        <h3 class="text-xl font-bold text-gray-800 dark:text-white mb-4">Security</h3>
-        <div class="flex justify-between items-center">
-          <p>Change your password.</p>
-          <button id="change-password-btn" class="animated-btn px-5 py-2 bg-gray-200 dark:bg-gray-700 text-sm font-semibold rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600">Change Password</button>
-        </div>
-      </div>
     </div>`;
 
   document.getElementById('profile-name').addEventListener('blur', (e) => validateInput(e.target, val => val.trim().length > 0, 'Name cannot be empty.'));
@@ -2285,7 +2315,7 @@ auth.onAuthStateChanged(user => {
       products = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
       const activeTab = document.querySelector('.tab-content.active');
       if (activeTab && activeTab.id !== 'product-detail-tab') {
-        setActiveTab(activeTab.id.replace('-tab', ''));
+        setActiveTab(activeTab.id.replace('-tab', ''), true);
       }
     });
     cartUnsubscribe = db.collection('carts').doc(currentUser.uid).collection('items').onSnapshot(snapshot => {
@@ -2314,6 +2344,7 @@ auth.onAuthStateChanged(user => {
     setActiveTab('home');
   } else {
     currentUser = null; products = []; cart = {}; orders = []; lostAndFoundItems = [];
+    navigationHistory = ['home'];
     sessionStorage.removeItem('welcomeShown');
     appContainer.classList.add('opacity-0');
     authModal.classList.add('show');
@@ -2341,6 +2372,8 @@ document.body.addEventListener('click', (e) => {
       filterAndRenderProducts(false);
     }
   }
+
+  if(e.target.id === 'go-back-btn') { handleGoBack(); return; }
 
   if(e.target.id === 'show-signup') renderAuthModal('signup');
   if(e.target.id === 'show-signin') renderAuthModal('signin');
@@ -2464,5 +2497,3 @@ window.addEventListener('scroll', () => header.classList.toggle('shadow-lg', win
 </script>
 </body>
 </html>
-
-
