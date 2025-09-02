@@ -595,7 +595,7 @@ const showWelcomeAnimation = (user) => {
     <div class="text-center text-white">
       <div class="welcome-icon text-7xl mb-4">🎓</div>
       <h1 class="welcome-title text-5xl md:text-6xl font-bold font-lexend">Welcome, ${user.displayName.split(' ')[0]}!</h1>
-      <p class="welcome-subtitle text-xl md:text-2xl mt-2 text-primary-200">Entering Campus Exchange...</p>
+      <p class="welcome-subtitle text-xl md:text-2xl mt-2 text-primary-200">Entering Campus Mart...</p>
     </div>`;
   welcomeOverlay.classList.add('show');
   setTimeout(() => {
@@ -763,7 +763,8 @@ const renderAuthModal = (view = 'signin') => {
       </div>
       <h2 class="text-2xl font-bold text-gray-800 dark:text-white">Verify Your Email</h2>
       <p class="text-gray-600 dark:text-gray-300 mt-2 mb-4">We've sent a verification link to your email. Please check your inbox to activate your account.</p>
-      <p class="text-sm text-gray-500">This page will automatically refresh once you're verified.</p>
+      <p class="text-sm text-gray-500 mb-6">This page will automatically refresh once you're verified.</p>
+      <button id="show-signin" class="animated-btn w-full p-3 bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 rounded-lg font-semibold hover:bg-gray-300 dark:hover:bg-gray-600">Back to Sign In</button>
       </div>`;
     emailVerificationInterval = setInterval(async () => {
       if (auth.currentUser) {
@@ -1584,6 +1585,13 @@ const renderProfilePage = () => {
                     <button id="change-password-btn" class="animated-btn px-5 py-2 bg-gray-200 dark:bg-gray-700 text-sm font-semibold rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600">Change Password</button>
                 </div>
             </div>
+            <div class="bg-white dark:bg-gray-800 p-6 sm:p-8 rounded-xl shadow-lg">
+                <h3 class="text-xl font-bold text-gray-800 dark:text-white mb-4">Sign Out</h3>
+                <div class="flex flex-col sm:flex-row justify-between items-center gap-4">
+                    <p class="text-gray-600 dark:text-gray-400">Are you sure you want to sign out of your account?</p>
+                    <button id="sign-out-btn" class="animated-btn w-full sm:w-auto px-5 py-2 bg-red-500 text-white text-sm font-semibold rounded-lg hover:bg-red-600">Sign Out</button>
+                </div>
+            </div>
         </div>
     </div>`;
 
@@ -1994,6 +2002,7 @@ const addToCart = (productId) => {
     imageUrl: product.imageUrl,
     quantity: 1
   }).catch(error => {
+    console.error("Detailed Add to Cart Error:", error);
     showMessage('Failed to add to cart. Please try again.', 'error');
   });
 };
