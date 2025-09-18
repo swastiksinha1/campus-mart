@@ -265,6 +265,8 @@ h1, h2, h3, h4, h5, h6 {
 .dark .category-card:hover {
     box-shadow: 0 8px 25px rgba(59, 130, 246, 0.15);
     border-color: #3b82f6;
+
+
 }
 </style>
 </head>
@@ -296,6 +298,13 @@ h1, h2, h3, h4, h5, h6 {
 
 <div id="change-password-modal" class="modal fixed inset-0 bg-gray-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
 <div id="change-password-modal-content" class="modal-content bg-white dark:bg-gray-800 rounded-xl shadow-2xl w-full max-w-md"></div>
+</div>
+
+<div id="terms-modal" class="modal fixed inset-0 bg-gray-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 overflow-y-auto">
+    <div id="terms-modal-content" class="modal-content bg-white dark:bg-gray-800 rounded-xl shadow-2xl w-full max-w-3xl"></div>
+</div>
+<div id="privacy-modal" class="modal fixed inset-0 bg-gray-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 overflow-y-auto">
+    <div id="privacy-modal-content" class="modal-content bg-white dark:bg-gray-800 rounded-xl shadow-2xl w-full max-w-3xl"></div>
 </div>
 
 <div id="welcome-overlay" class="modal fixed inset-0 flex items-center justify-center z-[60]"></div>
@@ -355,8 +364,13 @@ h1, h2, h3, h4, h5, h6 {
         </div>
 
         <div class="flex space-x-6 text-sm text-gray-400 order-2 md:order-3">
-            <a href="#" id="terms-link" class="hover:text-primary-400 transition-colors">Terms & Conditions</a>
-            <a href="#" id="privacy-link" class="hover:text-primary-400 transition-colors">Privacy Policy</a>
+            <button id="terms-link" class="hover:text-primary-400 transition-colors">Terms & Conditions</button>
+            <button id="privacy-link" class="hover:text-primary-400 transition-colors">Privacy Policy</button>
+            <div class="flex space-x-6 text-sm text-gray-400 order-2 md:order-3">
+          
+          <a href="mailto:swastiksinha001@gmail.com" class="hover:text-primary-400 transition-colors">Contact Support</a>
+      </div>
+      ```
         </div>
     </div>
 </div>
@@ -427,6 +441,10 @@ const tradeOfferModal = document.getElementById('trade-offer-modal');
 const tradeOfferModalContent = document.getElementById('trade-offer-modal-content');
 const changePasswordModal = document.getElementById('change-password-modal');
 const changePasswordModalContent = document.getElementById('change-password-modal-content');
+const termsModal = document.getElementById('terms-modal');
+const termsModalContent = document.getElementById('terms-modal-content');
+const privacyModal = document.getElementById('privacy-modal');
+const privacyModalContent = document.getElementById('privacy-modal-content');
 const welcomeOverlay = document.getElementById('welcome-overlay');
 const cartDrawer = document.getElementById('cart-drawer');
 const cartOverlay = document.getElementById('cart-overlay');
@@ -473,6 +491,167 @@ const campusBot = {
   photoURL: 'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22%3E%3Ccircle cx=%2250%22 cy=%2250%22 r=%2245%22 fill=%22%2394a3b8%22/%3E%3Ctext x=%2250%22 y=%2268%22 font-size=%2250%22 text-anchor=%22middle%22 fill=%22white%22%3E🤖%3C/text%3E%3C/svg%3E',
   isBot: true
 };
+
+const chatbotIntents = [
+    // --- Basic & Navigational Intents ---
+    {
+        name: 'greeting',
+        keywords: [/hey/i, /hello/i, /hi/i, /yo/i],
+        handler: (message) => {
+            const userName = currentUser ? `, ${currentUser.displayName.split(' ')[0]}` : '';
+            return `Hello${userName}! I'm the Campus Assistant. How can I help you navigate the marketplace today?`;
+        }
+    },
+    {
+       // Make sure the first intent in your chatbotIntents array looks EXACTLY like this.
+
+    name: 'navigate',
+    keywords: [/buy/i, /sell/i, /trade/i, /home/i, /profile/i, /orders/i, /go to/i, /show me/i, /take me to/i, /open/i, /lost and found/i, /my listings/i],
+    handler: (message) => {
+        const tabs = ['home', 'buy', 'sell', 'trade', 'lost and found', 'my listings', 'orders', 'profile'];
+        for (const tab of tabs) {
+            if (message.toLowerCase().includes(tab)) {
+                const tabId = tab.replace(' ', '-');
+                setActiveTab(tabId);
+                // Close the chat window for a better user experience
+                document.getElementById('popup-chat-container')?.classList.remove('open');
+                document.getElementById('open-popup-chat-btn')?.classList.remove('hidden');
+                return `Sure, taking you to the **${tab}** page.`;
+            }
+        }
+        return "I can take you to Home, Buy, Sell, Trade, etc. Where would you like to go?";
+    }
+}, // <-- Don't forget the comma here before the next intent!
+    
+
+    // --- "How-To" & Explanatory Intents ---
+    {
+        name: 'explain_tab',
+        keywords: [/what is the/i, /tell me about the/i, /how does .* work/i],
+        handler: (message) => {
+            const msg = message.toLowerCase();
+            if (msg.includes('buy')) return "The **Buy** page is where you can browse, search, and filter all items listed for sale by other students.";
+            if (msg.includes('sell')) return "On the **Sell** page, you can list your own items for sale. Just fill out the form with details and an image, set a price, and you're good to go!";
+            if (msg.includes('trade')) return "The **Trade/Barter** page shows all items where the seller is open to trading instead of just selling for cash. You can make offers on these items.";
+            if (msg.includes('lost and found')) return "The **Lost & Found** page is a campus bulletin board. You can report items you've lost or found to help reconnect them with their owners.";
+            if (msg.includes('my listings')) return "The **My Listings** page shows you all the items you have personally put up for sale, separated into 'Available' and 'Sold' categories.";
+            if (msg.includes('orders')) return "The **My Orders** page contains the history of all the purchases you've made through the site.";
+            return "I can tell you about the Buy, Sell, Trade, Lost & Found, My Listings, or Orders pages. Which one are you interested in?";
+        }
+    },
+    {
+        name: 'how_to_list_item',
+        keywords: [/how do I sell/i, /how do I list/i],
+        handler: (message) => {
+            setActiveTab('sell');
+            document.getElementById('popup-chat-container')?.classList.remove('open');
+            document.getElementById('open-popup-chat-btn')?.classList.remove('hidden');
+            return "It's easy! I've taken you to the **Sell** page. Just fill in the product's name, description, price, and upload a clear photo.";
+        }
+    },
+
+    // --- Data-Driven & User-Specific Intents ---
+    {
+        name: 'search_items_with_filter',
+        keywords: [/find/i, /search for/i, /look for/i, /do you have/i],
+        handler: (message) => {
+            // Regex to find a query and an optional price filter
+            // e.g., "find books under 500" or "find electronics over 2000"
+            const priceMatch = message.match(/(under|over|less than|more than) ₹?(\d+)/i);
+            let query = message.replace(/(find|search for|look for|do you have) (a|an|any|some)?/i, '').trim();
+            
+            if (priceMatch) {
+                query = query.replace(priceMatch[0], '').trim(); // Remove the price part from the main query
+            }
+
+            if (!query) return "What item are you looking for? For example, say 'find a textbook under ₹500'.";
+            
+            setActiveTab('buy');
+            setTimeout(() => {
+                const searchInput = document.querySelector('#buy-tab #search-input');
+                const priceInput = document.querySelector('#buy-tab #filter-price');
+                if (searchInput) {
+                    searchInput.value = query;
+                    searchInput.dispatchEvent(new Event('input')); 
+                }
+                if (priceInput && priceMatch) {
+                    const condition = priceMatch[1].toLowerCase();
+                    const amount = parseInt(priceMatch[2]);
+                    if (condition === 'under' || condition === 'less than') {
+                        if (amount <= 500) priceInput.value = '0-500';
+                        else if (amount <= 2000) priceInput.value = '500-2000';
+                        else if (amount <= 5000) priceInput.value = '2000-5000';
+                    } else if (condition === 'over' || condition === 'more than') {
+                        if (amount >= 5000) priceInput.value = '5000-9999999';
+                        else if (amount >= 2000) priceInput.value = '2000-5000';
+                    }
+                    priceInput.dispatchEvent(new Event('change'));
+                }
+            }, 100);
+
+            return `I'm searching for "${query}" for you...`;
+        }
+    },
+    {
+        name: 'check_my_listings_status',
+        keywords: [/my listings/i, /items I'm selling/i, /what am I selling/i],
+        handler: (message) => {
+            if (!currentUser) return "You need to be signed in to see your listings.";
+            
+            const myListings = products.filter(p => p.sellerId === currentUser.uid);
+            if (myListings.length === 0) {
+                return "You haven't listed any items for sale yet. Why not sell something today?";
+            }
+            
+            const availableCount = myListings.filter(p => p.status === 'available').length;
+            const soldCount = myListings.length - availableCount;
+            
+            setActiveTab('my-listings');
+            document.getElementById('popup-chat-container')?.classList.remove('open');
+            document.getElementById('open-popup-chat-btn')?.classList.remove('hidden');
+
+            return `You have **${availableCount}** item(s) for sale and **${soldCount}** sold/traded item(s). I've opened the **My Listings** page for you.`;
+        }
+    },
+    {
+        name: 'check_orders',
+        keywords: [/my orders/i, /order history/i, /my purchases/i],
+        handler: (message) => {
+            if (!currentUser) return "You need to be signed in to view your orders.";
+            if (orders.length === 0) {
+                setActiveTab('buy');
+                return "You haven't placed any orders yet. I've taken you to the **Buy** page so you can browse!";
+            } else {
+                setActiveTab('orders');
+                return `You have **${orders.length}** order(s) in your history. I've taken you to your orders page.`;
+            }
+        }
+    },
+
+    // --- General & Fallback Intents ---
+    {
+        name: 'help',
+        keywords: [/help/i, /what can you do/i, /commands/i],
+        handler: (message) => {
+            return `I can help you with a few things! Try asking me:\n- "Tell me about the trade page"\n- "Find a backpack under ₹1000"\n- "Show me my listings"\n- "How do I sell an item?"`;
+        }
+    },
+    {
+        name: 'support_contact',
+        keywords: [/contact/i, /support/i, /issue/i, /problem/i, /email/i],
+        handler: (message) => {
+            return "For support, you can contact the administrator at swastiksinha001@gmail.com.";
+        }
+    },
+    {
+        name: 'thank_you',
+        keywords: [/thanks/i, /thank you/i, /thx/i],
+        handler: (message) => {
+            return "You're welcome! Happy to help. 😊";
+        }
+    }
+];
+
 
 // --- Helper & UI Functions ---
 const getInitials = (name) => {
@@ -731,25 +910,6 @@ const renderAuthModal = (view = 'signin') => {
       <div>${passwordInputHTML}</div>
       <button type="submit" class="animated-btn w-full p-3 bg-primary-600 text-white rounded-lg font-semibold hover:bg-primary-700">${view === 'signin' ? 'Sign In' : 'Create Account'}</button>
     </form>
-    <div class="relative my-6">
-      <div class="absolute inset-0 flex items-center" aria-hidden="true">
-        <div class="w-full border-t border-gray-300 dark:border-gray-600"></div>
-      </div>
-      <div class="relative flex justify-center text-sm">
-        <span class="px-2 bg-white dark:bg-gray-800 text-gray-500 dark:text-gray-400">OR</span>
-      </div>
-    </div>
-    <div>
-      <button id="google-signin-btn" class="w-full flex justify-center items-center gap-3 p-3 border dark:border-gray-600 rounded-lg font-semibold hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
-        <svg class="w-5 h-5" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48">
-          <path fill="#FFC107" d="M43.611 20.083H42V20H24v8h11.303c-1.649 4.657-6.08 8-11.303 8c-6.627 0-12-5.373-12-12s5.373-12 12-12c3.059 0 5.842 1.154 7.961 3.039L38.802 6.852C34.661 3.141 29.63 1 24 1C10.745 1 0 11.745 0 25s10.745 24 24 24s24-10.745 24-24c0-1.341-.138-2.65-.389-3.917z"></path>
-          <path fill="#FF3D00" d="m6.306 14.691l6.571 4.819C14.655 15.108 18.961 13 24 13c3.059 0 5.842 1.154 7.961 3.039L38.802 6.852C34.661 3.141 29.63 1 24 1C16.318 1 9.656 4.962 6.306 10.691z"></path>
-          <path fill="#4CAF50" d="M24 48c5.63 0 10.661-1.858 14.802-5.148l-6.571-4.819C29.992 41.524 27.218 43 24 43c-5.223 0-9.651-3.657-11.127-8.481l-6.571 4.819C9.656 43.038 16.318 47 24 47z"></path>
-          <path fill="#1976D2" d="M43.611 20.083H42V20H24v8h11.303c-0.792 2.237-2.231 4.166-4.087 5.571l6.571 4.819C43.978 36.341 48 30.166 48 24c0-1.341-.138-2.65-.389-3.917z"></path>
-        </svg>
-        ${view === 'signin' ? 'Sign in with Google' : 'Sign up with Google'}
-      </button>
-    </div>
     <p class="text-center text-sm text-gray-500 dark:text-gray-400 mt-6">
       ${view === 'signin'
       ? `Don't have an account? <button id="show-signup" class="font-semibold text-primary-600 dark:text-primary-400 hover:underline">Sign Up</button>`
@@ -900,19 +1060,48 @@ const renderHomePage = () => {
         </div>
       </div>
     </section>
+
     <section class="py-16 sm:py-24 fade-in-section">
+        <div class="container mx-auto px-6">
+            <h2 class="text-3xl font-bold text-center text-gray-900 dark:text-white mb-16">Why Choose CampusMart?</h2>
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 text-center">
+                <div class="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-lg">
+                    <div class="text-4xl mb-4 text-primary-500">🛡️</div>
+                    <h3 class="text-xl font-semibold mb-2 dark:text-white">Trusted Community</h3>
+                    <p class="text-gray-600 dark:text-gray-300">An exclusive marketplace for verified students, ensuring safer and more reliable transactions.</p>
+                </div>
+                <div class="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-lg">
+                    <div class="text-4xl mb-4 text-primary-500">📍</div>
+                    <h3 class="text-xl font-semibold mb-2 dark:text-white">On-Campus Convenience</h3>
+                    <p class="text-gray-600 dark:text-gray-300">No shipping, no hassle. Easily meet up with buyers and sellers right on campus.</p>
+                </div>
+                <div class="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-lg">
+                    <div class="text-4xl mb-4 text-primary-500">💰</div>
+                    <h3 class="text-xl font-semibold mb-2 dark:text-white">Budget-Friendly</h3>
+                    <p class="text-gray-600 dark:text-gray-300">Find great deals on textbooks, electronics, and more, or make extra cash by selling what you don't need.</p>
+                </div>
+                <div class="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-lg">
+                    <div class="text-4xl mb-4 text-primary-500">♻️</div>
+                    <h3 class="text-xl font-semibold mb-2 dark:text-white">Eco-Friendly</h3>
+                    <p class="text-gray-600 dark:text-gray-300">Promote sustainability by giving pre-loved items a new home and reducing waste.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="py-16 sm:py-24 bg-white dark:bg-gray-800/50 fade-in-section">
       <div class="container mx-auto px-6">
         <h2 class="text-3xl font-bold text-center text-gray-900 dark:text-white mb-16">Browse By Category</h2>
         <div id="homepage-categories-container" class="grid grid-cols-2 sm:grid-cols-3 gap-6 text-center"></div>
       </div>
     </section>
-    <section class="py-16 sm:py-24 bg-white dark:bg-gray-800/50 fade-in-section">
+    <section class="py-16 sm:py-24 fade-in-section">
       <div class="container mx-auto px-6">
         <h2 class="text-3xl font-bold text-center text-gray-900 dark:text-white mb-16">Recently Added Items</h2>
         <div id="recently-added-container" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8"></div>
       </div>
     </section>
-    <section class="py-16 sm:py-24 fade-in-section">
+    <section class="py-16 sm:py-24 bg-white dark:bg-gray-800/50 fade-in-section">
       <div class="container mx-auto px-6">
         <div class="flex justify-between items-center mb-8">
           <h2 class="text-3xl font-bold text-gray-900 dark:text-white">Latest Lost & Found</h2>
@@ -921,7 +1110,43 @@ const renderHomePage = () => {
         <div id="homepage-lost-and-found-container" class="grid grid-cols-1 md:grid-cols-3 gap-8"></div>
       </div>
     </section>
-    `;
+
+    <section class="py-16 sm:py-24 fade-in-section">
+        <div class="container mx-auto px-6 max-w-4xl">
+            <h2 class="text-3xl font-bold text-center text-gray-900 dark:text-white mb-12">Frequently Asked Questions</h2>
+            <div class="space-y-4">
+                <details class="group p-4 rounded-lg bg-gray-50 dark:bg-gray-800">
+                    <summary class="flex items-center justify-between cursor-pointer font-semibold text-gray-800 dark:text-white group-open:text-primary-600">
+                        What is CampusMart?
+                        <svg class="w-5 h-5 transform group-open:rotate-180 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                    </summary>
+                    <p class="mt-3 text-gray-600 dark:text-gray-300">CampusMart is a dedicated online marketplace created exclusively for students. Our mission is to provide a safe, convenient, and affordable way for you to buy, sell, and trade goods like textbooks, electronics, and furniture directly with other students on your campus.</p>
+                </details>
+                <details class="group p-4 rounded-lg bg-gray-50 dark:bg-gray-800">
+                    <summary class="flex items-center justify-between cursor-pointer font-semibold text-gray-800 dark:text-white group-open:text-primary-600">
+                        How do I get paid when I sell an item?
+                        <svg class="w-5 h-5 transform group-open:rotate-180 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                    </summary>
+                    <p class="mt-3 text-gray-600 dark:text-gray-300">This platform facilitates the connection between students. All payments (cash, UPI, etc.) are handled directly between the buyer and seller during your in-person meetup on campus.</p>
+                </details>
+                <details class="group p-4 rounded-lg bg-gray-50 dark:bg-gray-800">
+                    <summary class="flex items-center justify-between cursor-pointer font-semibold text-gray-800 dark:text-white group-open:text-primary-600">
+                        Is it safe to meet with buyers/sellers?
+                        <svg class="w-5 h-5 transform group-open:rotate-180 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                    </summary>
+                    <p class="mt-3 text-gray-600 dark:text-gray-300">We strongly recommend meeting in well-lit, public places on campus, such as the library lobby, student union, or a busy cafe. Always inform a friend about your meeting details for extra safety.</p>
+                </details>
+                <details class="group p-4 rounded-lg bg-gray-50 dark:bg-gray-800">
+                    <summary class="flex items-center justify-between cursor-pointer font-semibold text-gray-800 dark:text-white group-open:text-primary-600">
+                        Can I trade items instead of just buying/selling?
+                        <svg class="w-5 h-5 transform group-open:rotate-180 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                    </summary>
+                    <p class="mt-3 text-gray-600 dark:text-gray-300">Yes! Sellers can mark their items as "Tradeable." You can browse these items on the 'Trade/Barter' tab and make offers to swap your items instead of paying cash.</p>
+                </details>
+            </div>
+        </div>
+    </section>
+  `;
   renderHomepageCategories();
   renderRecentlyAddedProducts();
   renderHomepageLostAndFoundPreview();
@@ -1384,6 +1609,9 @@ const createLostAndFoundCard = (item) => {
   const badgeColor = isLost ? 'bg-red-500' : 'bg-green-500';
   const badgeText = isLost ? 'LOST' : 'FOUND';
 
+  // **FIX:** Check if item.createdAt exists before calling .toDate()
+  const reportDate = item.createdAt ? new Date(item.createdAt.toDate()).toLocaleDateString() : 'Just now';
+
   const isMyReport = currentUser?.uid === item.reporterId;
   const deleteButtonHTML = isMyReport ? `
     <button class="delete-lost-found-btn absolute top-2 right-2 p-2 text-gray-400 hover:text-red-500 rounded-full bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm" data-id="${item.id}" aria-label="Delete report">
@@ -1405,7 +1633,7 @@ const createLostAndFoundCard = (item) => {
     </div>
     <div class="p-5 flex flex-col flex-grow">
       <h3 class="text-lg font-bold text-gray-900 dark:text-white truncate">${item.title}</h3>
-      <p class="text-xs text-gray-500 dark:text-gray-400">Reported by ${item.reporterName} on ${new Date(item.createdAt.toDate()).toLocaleDateString()}</p>
+      <p class="text-xs text-gray-500 dark:text-gray-400">Reported by ${item.reporterName} on ${reportDate}</p>
       <p class="text-gray-600 dark:text-gray-300 text-sm mt-3 flex-grow">${item.description}</p>
       <div class="mt-4 pt-4 border-t border-gray-100 dark:border-gray-700 space-y-2 text-sm">
         <p><strong class="text-gray-500 dark:text-gray-400">${isLost ? 'Last Seen At:' : 'Found At:'}</strong> ${item.location}</p>
@@ -1457,12 +1685,15 @@ const renderOrdersPage = () => {
   if (orders.length === 0) {
     content += `<div class="bg-white dark:bg-gray-800 p-8 rounded-xl shadow-lg text-center"><p class="text-gray-500">You haven't placed any orders yet. Time to shop! 🛍️</p></div>`;
   } else {
-    content += `<div class="space-y-6">${orders.map(order => `
+    content += `<div class="space-y-6">${orders.map(order => {
+        // **FIX:** Check if order.createdAt exists before calling .toDate()
+        const orderDate = order.createdAt ? new Date(order.createdAt.toDate()).toLocaleString('en-US', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true }) : 'Just now';
+        return `
       <div class="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-lg">
         <div class="flex flex-col sm:flex-row justify-between items-start border-b border-gray-200 dark:border-gray-700 pb-4 mb-4 gap-2">
           <div>
             <p class="font-bold text-lg">Order Placed</p>
-            <p class="text-sm text-gray-500">${new Date(order.createdAt.toDate()).toLocaleString('en-US', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true })}</p>
+            <p class="text-sm text-gray-500">${orderDate}</p>
           </div>
           <div class="text-left sm:text-right">
             <p class="font-semibold text-lg">Total: ₹${order.total.toFixed(0)}</p>
@@ -1493,7 +1724,7 @@ const renderOrdersPage = () => {
             }).join('')}
         </div>
       </div>
-      `).join('')}</div>`;
+      `}).join('')}</div>`;
   }
   container.innerHTML = content;
 };
@@ -1688,6 +1919,81 @@ const renderChangePasswordModal = () => {
   document.getElementById('current-password').focus();
 };
 
+const renderPrivacyModal = () => {
+    privacyModalContent.innerHTML = `
+        <div class="flex flex-col max-h-[90vh]">
+            <div class="p-6 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center bg-gray-50 dark:bg-gray-800/50 rounded-t-xl">
+                <h2 class="text-2xl font-bold text-primary-600 dark:text-primary-400">Privacy Policy</h2>
+                <button class="close-policy-modal p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700">&times;</button>
+            </div>
+            <div class="p-8 overflow-y-auto text-gray-600 dark:text-gray-300 space-y-6">
+                <p class="text-sm text-gray-500"><strong>Last Updated:</strong> ${new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
+                <p>Welcome to CampusMart ("we," "our," or "us"). We are committed to protecting your privacy. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you use our application.</p>
+                
+                <div class="space-y-4">
+                    <div class="p-4 bg-primary-50 dark:bg-gray-700/50 rounded-lg">
+                        <h3 class="text-lg font-semibold text-gray-800 dark:text-white">1. Information We Collect</h3>
+                        <p class="mt-2">We may collect personal identification information from you when you register, place an order, or interact with our services. This includes your name and email address.</p>
+                    </div>
+                    <div class="p-4 bg-primary-50 dark:bg-gray-700/50 rounded-lg">
+                        <h3 class="text-lg font-semibold text-gray-800 dark:text-white">2. How We Use Your Information</h3>
+                        <p class="mt-2">We use the information to personalize your experience, improve our application, process transactions securely, and send periodic emails regarding your orders or other relevant services.</p>
+                    </div>
+                    <div class="p-4 bg-primary-50 dark:bg-gray-700/50 rounded-lg">
+                        <h3 class="text-lg font-semibold text-gray-800 dark:text-white">3. Data Security</h3>
+                        <p class="mt-2">We adopt appropriate data collection, storage, and security measures to protect against unauthorized access, alteration, or destruction of your personal information and transaction data.</p>
+                    </div>
+                    <div class="p-4 bg-primary-50 dark:bg-gray-700/50 rounded-lg">
+                        <h3 class="text-lg font-semibold text-gray-800 dark:text-white">4. Sharing Your Information</h3>
+                        <p class="mt-2">We do not sell, trade, or rent your personal identification information. Your email is shared with a buyer/seller only to facilitate a transaction you've initiated.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="p-4 border-t border-gray-200 dark:border-gray-700 flex justify-end bg-gray-50 dark:bg-gray-800/50 rounded-b-xl">
+                <button class="close-policy-modal px-5 py-2 bg-primary-600 text-white rounded-lg font-semibold animated-btn">Close</button>
+            </div>
+        </div>
+    `;
+};
+
+const renderTermsModal = () => {
+    termsModalContent.innerHTML = `
+        <div class="flex flex-col max-h-[90vh]">
+            <div class="p-6 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center bg-gray-50 dark:bg-gray-800/50 rounded-t-xl">
+                <h2 class="text-2xl font-bold text-primary-600 dark:text-primary-400">Terms & Conditions</h2>
+                <button class="close-policy-modal p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700">&times;</button>
+            </div>
+            <div class="p-8 overflow-y-auto text-gray-600 dark:text-gray-300 space-y-6">
+                <p class="text-sm text-gray-500"><strong>Last Updated:</strong> ${new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
+                <p>Please read these Terms and Conditions ("Terms") carefully before using the CampusMart application (the "Service"). Your access to and use of the Service is conditioned on your acceptance of and compliance with these Terms.</p>
+                
+                <div class="space-y-4">
+                    <div class="p-4 bg-primary-50 dark:bg-gray-700/50 rounded-lg">
+                        <h3 class="text-lg font-semibold text-gray-800 dark:text-white">1. Accounts & Conduct</h3>
+                        <p class="mt-2">When you create an account, you must provide accurate information. You agree not to post any material which is defamatory, offensive, or obscene. You are responsible for all content you post.</p>
+                    </div>
+                    <div class="p-4 bg-primary-50 dark:bg-gray-700/50 rounded-lg">
+                        <h3 class="text-lg font-semibold text-gray-800 dark:text-white">2. Transactions</h3>
+                        <p class="mt-2">CampusMart is a platform for users to connect. We are not a party to any transaction. We do not guarantee the quality, safety, or legality of items advertised, the truth of listings, or the ability of users to complete a transaction.</p>
+                    </div>
+                    <div class="p-4 bg-primary-50 dark:bg-gray-700/50 rounded-lg">
+                        <h3 class="text-lg font-semibold text-gray-800 dark:text-white">3. Prohibited Items</h3>
+                        <p class="mt-2">Listing illegal items, including but not limited to weapons, drugs, and stolen goods, is strictly prohibited and will result in immediate account termination and potential reporting to authorities.</p>
+                    </div>
+                    <div class="p-4 bg-primary-50 dark:bg-gray-700/50 rounded-lg">
+                        <h3 class="text-lg font-semibold text-gray-800 dark:text-white">4. Termination</h3>
+                        <p class="mt-2">We may terminate or suspend access to our Service immediately, without prior notice, for any reason, including a breach of these Terms.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="p-4 border-t border-gray-200 dark:border-gray-700 flex justify-end bg-gray-50 dark:bg-gray-800/50 rounded-b-xl">
+                <button class="close-policy-modal px-5 py-2 bg-primary-600 text-white rounded-lg font-semibold animated-btn">Close</button>
+            </div>
+        </div>
+    `;
+};
+
+
 // --- Chatbot Functions ---
 const renderPopupChat = () => {
   popupChatWidget.innerHTML = `
@@ -1697,10 +2003,10 @@ const renderPopupChat = () => {
           <img src="${campusBot.photoURL}" class="w-10 h-10 rounded-full object-cover">
           <h3 class="text-lg font-bold">${campusBot.displayName}</h3>
         </div>
-        <button id="close-popup-chat-btn" class="p-1 text-gray-500 hover:text-gray-800 dark:hover:text-white">&times;</button>
+        <button id="close-popup-chat-btn" class="p-1 text-gray-500 hover:text-gray-800 dark:hover:text-white text-2xl">&times;</button>
       </div>
       <div id="popup-chat-messages" class="flex-grow p-4 overflow-y-auto space-y-4 flex flex-col">
-        <div class="w-fit max-w-[75%] p-3 rounded-xl shadow-sm bg-gray-200 dark:bg-gray-700 self-start">Hi there! How can I help you?</div>
+        <div class="w-fit max-w-[75%] p-3 rounded-xl shadow-sm bg-gray-200 dark:bg-gray-700 self-start">Hi there! How can I help you today?</div>
       </div>
       <div class="p-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50">
         <form id="popup-chat-form" class="flex items-center space-x-2">
@@ -1716,47 +2022,60 @@ const renderPopupChat = () => {
 };
 
 const handlePopupSendMessage = (e) => {
-  e.preventDefault();
-  const input = document.getElementById('popup-chat-input');
-  const messagesContainer = document.getElementById('popup-chat-messages');
-  if (!input || !messagesContainer) return;
+    e.preventDefault();
+    const input = document.getElementById('popup-chat-input');
+    const messagesContainer = document.getElementById('popup-chat-messages');
+    if (!input || !messagesContainer) return;
 
-  const text = input.value.trim();
-  if (!text) return;
+    const text = input.value.trim();
+    if (!text) return;
 
-  const filteredText = filterProfanity(text);
-  input.value = '';
+    const filteredText = filterProfanity(text); // Assumes you have a filterProfanity function
+    input.value = '';
 
-  const userMessageEl = document.createElement('div');
-  userMessageEl.className = 'w-fit max-w-[75%] p-3 rounded-xl shadow-sm bg-primary-600 text-white self-end';
-  userMessageEl.textContent = filteredText;
-  messagesContainer.appendChild(userMessageEl);
-  messagesContainer.scrollTop = messagesContainer.scrollHeight;
-
-  setTimeout(() => {
-    let replyText = "I'm sorry, I didn't quite understand that. Could you rephrase?";
-    const lowerCaseMessage = filteredText.toLowerCase();
-
-    if (lowerCaseMessage.includes('hello') || lowerCaseMessage.includes('hi')) {
-      replyText = "Hello! Welcome to Campus Exchange. Ask me anything!";
-    } else if (lowerCaseMessage.includes('help')) {
-      replyText = "I can help with questions about buying, selling, or your account. What's on your mind?";
-    } else if (lowerCaseMessage.includes('thank')) {
-      replyText = "You're welcome! Is there anything else I can help with?";
-    }
-
-    const botMessageEl = document.createElement('div');
-    botMessageEl.className = 'w-fit max-w-[75%] p-3 rounded-xl shadow-sm bg-gray-200 dark:bg-gray-700 self-start';
-    botMessageEl.textContent = replyText;
-    messagesContainer.appendChild(botMessageEl);
+    // --- Display User's Message ---
+    const userMessageEl = document.createElement('div');
+    userMessageEl.className = 'w-fit max-w-[75%] p-3 rounded-xl shadow-sm bg-primary-600 text-white self-end';
+    userMessageEl.textContent = filteredText;
+    messagesContainer.appendChild(userMessageEl);
     messagesContainer.scrollTop = messagesContainer.scrollHeight;
-  }, 1000);
+
+    // --- Bot Logic and Response ---
+    setTimeout(() => {
+        let replyText;
+        let intentFound = false;
+
+        // Loop through intents to find a match
+        for (const intent of chatbotIntents) {
+            for (const keyword of intent.keywords) {
+                if (filteredText.match(keyword)) {
+                    replyText = intent.handler(filteredText);
+                    intentFound = true;
+                    break;
+                }
+            }
+            if (intentFound) break;
+        }
+
+        // If no intent was matched, use a fallback response
+        if (!intentFound) {
+            replyText = "I'm sorry, I'm not sure how to help with that. Try asking me 'help' to see what I can do.";
+        }
+
+        // --- Display Bot's Message ---
+        const botMessageEl = document.createElement('div');
+        botMessageEl.className = 'w-fit max-w-[75%] p-3 rounded-xl shadow-sm bg-gray-200 dark:bg-gray-700 self-start';
+        // Use innerHTML to render line breaks from the help message
+        botMessageEl.innerHTML = replyText.replace(/\n/g, '<br>'); 
+        messagesContainer.appendChild(botMessageEl);
+        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    }, 1000);
 };
+
 
 // --- Authentication & Profile Logic ---
 const handleSignUp = async (e) => { e.preventDefault(); const name = document.getElementById('signup-name').value; const email = document.getElementById('signup-email').value; const password = document.getElementById('signup-password').value; if(password.length < 6) { showMessage('Password must be at least 6 characters.', 'error'); return; } try { const userCredential = await auth.createUserWithEmailAndPassword(email, password); await userCredential.user.updateProfile({ displayName: name }); await db.collection('users').doc(userCredential.user.uid).set({ uid: userCredential.user.uid, displayName: name, email: email, photoURL: null, createdAt: firebase.firestore.FieldValue.serverTimestamp() }); await userCredential.user.sendEmailVerification(); showMessage('Account created! Please check your email to verify.', 'success'); renderAuthModal('verify'); } catch (error) { showMessage(error.message, 'error'); } };
 const handleSignIn = async (e) => { e.preventDefault(); const email = document.getElementById('signin-email').value; const password = document.getElementById('signin-password').value; try { const userCredential = await auth.signInWithEmailAndPassword(email, password); if (!userCredential.user.emailVerified) { await auth.signOut(); showMessage('Please verify your email before signing in.', 'error'); renderAuthModal('verify'); } } catch (error) { showMessage(error.message, 'error'); } };
-const handleGoogleSignIn = async () => { const provider = new firebase.auth.GoogleAuthProvider(); try { const result = await auth.signInWithPopup(provider); const user = result.user; if (result.additionalUserInfo.isNewUser) { await db.collection('users').doc(user.uid).set({ uid: user.uid, displayName: user.displayName, email: user.email, photoURL: user.photoURL, createdAt: firebase.firestore.FieldValue.serverTimestamp() }); showMessage('Welcome to Campus Exchange!', 'success'); } } catch (error) { if (error.code !== 'auth/popup-closed-by-user') { showMessage(`Google Sign-In failed: ${error.message}`, 'error'); } } };
 const handleSignOut = () => { showConfirmModal("Are you sure you want to sign out?", () => auth.signOut()); };
 const handleUpdateProfile = async (e) => { e.preventDefault(); const nameInput = document.getElementById('profile-name'); if (!validateInput(nameInput, val => val.trim().length > 0, 'Name cannot be empty.')) return; const newName = nameInput.value; if (newName === currentUser.displayName) return; const btn = document.getElementById('update-profile-btn'); btn.disabled = true; btn.innerHTML = `<div class="animate-spin rounded-full h-5 w-5 border-b-2 border-white mx-auto"></div>`; try { await currentUser.updateProfile({ displayName: newName }); const userDocRef = db.collection('users').doc(currentUser.uid); const productsRef = db.collection('products').where('sellerId', '==', currentUser.uid); const productsSnapshot = await productsRef.get(); const batch = db.batch(); batch.update(userDocRef, { displayName: newName }); productsSnapshot.docs.forEach(doc => { batch.update(doc.ref, { sellerName: newName }); }); await batch.commit(); showMessage('Profile updated successfully!', 'success'); renderHeaderActions(); renderProfilePage(); } catch (error) { showMessage('Error updating profile: ' + error.message, 'error'); } finally { btn.disabled = false; btn.innerHTML = 'Save Changes'; } };
 
@@ -1878,8 +2197,7 @@ const addProduct = async (e) => {
       createdAt: firebase.firestore.FieldValue.serverTimestamp(),
       status: 'available'
     };
-
-    await db.collection('products').add(product);
+await db.collection('products').add(product);
 
     showMessage('Product listed successfully!', 'success');
     e.target.reset();
@@ -2008,43 +2326,59 @@ const addToCart = (productId) => {
 };
 const removeFromCart = async (productId) => { if (!currentUser) return; await db.collection('carts').doc(currentUser.uid).collection('items').doc(productId).delete(); showMessage('Item removed from cart.', 'success'); };
 const handleCheckout = async () => {
-  const confirmBtn = document.getElementById('confirm-payment-btn');
-  confirmBtn.disabled = true;
-  confirmBtn.innerHTML = `<div class="animate-spin rounded-full h-5 w-5 border-b-2 border-white mx-auto"></div>`;
-  try {
-    await new Promise(res => setTimeout(res, 1500));
-    const cartItems = Object.values(cart);
-    const total = cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-    const orderData = {
-      userId: currentUser.uid,
-      userName: currentUser.displayName,
-      createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-      total: total,
-      items: cartItems.map(({ id, ...rest }) => rest)
-    };
-    await db.collection('orders').add(orderData);
+    const confirmBtn = document.getElementById('confirm-payment-btn');
+    confirmBtn.disabled = true;
+    confirmBtn.innerHTML = `<div class="animate-spin rounded-full h-5 w-5 border-b-2 border-white mx-auto"></div>`;
 
-    const batch = db.batch();
-    cartItems.forEach(item => {
-      const productRef = db.collection('products').doc(item.productId);
-      batch.update(productRef, { status: 'sold' });
+    try {
+        await new Promise(res => setTimeout(res, 1500)); // Simulate payment processing
+        const cartItems = Object.values(cart);
+        const total = cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
 
-      const cartItemRef = db.collection('carts').doc(currentUser.uid).collection('items').doc(item.id);
-      batch.delete(cartItemRef);
-    });
-    await batch.commit();
+        const orderData = {
+            userId: currentUser.uid,
+            userName: currentUser.displayName,
+            createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+            total: total,
+            items: cartItems.map(({ id, ...rest }) => ({ ...rest }))
+        };
+        
+        // This batch will now succeed because of your new security rule
+        const batch = db.batch();
 
-    checkoutModal.classList.remove('show');
-    triggerConfetti();
-    showMessage('Payment successful! Your order is confirmed.', 'success');
-    setActiveTab('orders');
-  } catch (error) {
-    showMessage('Payment failed. Please try again. ' + error.message, 'error');
-  } finally {
-    confirmBtn.disabled = false;
-    confirmBtn.innerHTML = 'Pay Now';
-  }
+        // Action 1: Create the new order document
+        const orderRef = db.collection('orders').doc(); // Create a reference first
+        batch.set(orderRef, orderData);
+
+        // Action 2: Update the status of each product to 'sold'
+        cartItems.forEach(item => {
+            const productRef = db.collection('products').doc(item.id);
+            batch.update(productRef, { status: 'sold' });
+        });
+
+        // Action 3: Clear the user's cart
+        const cartItemsRef = db.collection('carts').doc(currentUser.uid).collection('items');
+        const cartSnapshot = await cartItemsRef.get();
+        cartSnapshot.forEach(doc => {
+            batch.delete(doc.ref);
+        });
+
+        // Atomically commit all changes
+        await batch.commit();
+        
+        checkoutModal.classList.remove('show');
+        triggerConfetti();
+        showMessage('Purchase complete! The seller has been notified.', 'success');
+        setActiveTab('orders');
+
+    } catch (error) {
+        showMessage('Payment failed. Please try again. ' + error.message, 'error');
+    } finally {
+        confirmBtn.disabled = false;
+        confirmBtn.innerHTML = 'Pay Now';
+    }
 };
+
 
 // --- TRADE/BARTER LOGIC ---
 
@@ -2477,14 +2811,22 @@ document.body.addEventListener('click', (e) => {
   const rejectOfferBtn = e.target.closest('.reject-offer-btn');
   if(rejectOfferBtn) { handleRejectOffer(rejectOfferBtn.dataset.offerId, rejectOfferBtn.dataset.productId); }
 
-  if (e.target.id === 'terms-link') {
+if (e.target.id === 'terms-link') {
     e.preventDefault();
-    alert('The Terms & Conditions page is not yet implemented.');
-  }
-  if (e.target.id === 'privacy-link') {
+    renderTermsModal(); 
+    termsModal.classList.add('show'); // Show the terms modal
+}
+
+const closePolicyBtn = e.target.closest('.close-policy-modal');
+if (closePolicyBtn) {
+    
+    closePolicyBtn.closest('.modal').classList.remove('show');
+}
+if (e.target.id === 'privacy-link') {
     e.preventDefault();
-    alert('The Privacy Policy page is not yet implemented.');
-  }
+    renderPrivacyModal(); 
+    privacyModal.classList.add('show'); // Show the privacy modal
+}
 });
 
 document.body.addEventListener('submit', (e) => {
