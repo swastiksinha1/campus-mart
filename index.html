@@ -369,8 +369,7 @@ h1, h2, h3, h4, h5, h6 {
             <div class="flex space-x-6 text-sm text-gray-400 order-2 md:order-3">
           
           <a href="mailto:swastiksinha001@gmail.com" class="hover:text-primary-400 transition-colors">Contact Support</a>
-      </div>
-      ```
+        </div>
         </div>
     </div>
 </div>
@@ -922,9 +921,12 @@ const renderAuthModal = (view = 'signin') => {
         <svg class="h-10 w-10 text-green-600 dark:text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>
       </div>
       <h2 class="text-2xl font-bold text-gray-800 dark:text-white">Verify Your Email</h2>
-      <p class="text-gray-600 dark:text-gray-300 mt-2 mb-4">We've sent a verification link to your email. Please check your inbox to activate your account.</p>
+      <p class="text-gray-600 dark:text-gray-300 mt-2 mb-4">We've sent a verification link to your email. Please check your inbox (and spam folder) to activate your account.</p>
       <p class="text-sm text-gray-500 mb-6">This page will automatically refresh once you're verified.</p>
-      <button id="show-signin" class="animated-btn w-full p-3 bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 rounded-lg font-semibold hover:bg-gray-300 dark:hover:bg-gray-600">Back to Sign In</button>
+      <div class="space-y-3">
+        <button id="resend-verification-btn" class="animated-btn w-full p-3 bg-primary-600 text-white rounded-lg font-semibold hover:bg-primary-700">Resend Verification Email</button>
+        <button id="show-signin" class="animated-btn w-full p-3 bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 rounded-lg font-semibold hover:bg-gray-300 dark:hover:bg-gray-600">Back to Sign In</button>
+      </div>
       </div>`;
     emailVerificationInterval = setInterval(async () => {
       if (auth.currentUser) {
@@ -1602,47 +1604,71 @@ const filterAndRenderLostFoundItems = () => {
 };
 
 const createLostAndFoundCard = (item) => {
-  const card = document.createElement('div');
-  card.className = "bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden flex flex-col";
+    const card = document.createElement('div');
+    const isResolved = item.status === 'resolved';
+    card.className = `bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden flex flex-col ${isResolved ? 'opacity-60' : ''}`;
 
-  const isLost = item.reportType === 'lost';
-  const badgeColor = isLost ? 'bg-red-500' : 'bg-green-500';
-  const badgeText = isLost ? 'LOST' : 'FOUND';
+    const isLost = item.reportType === 'lost';
+    const badgeColor = isLost ? 'bg-red-500' : 'bg-green-500';
+    const badgeText = isLost ? 'LOST' : 'FOUND';
 
-  // **FIX:** Check if item.createdAt exists before calling .toDate()
-  const reportDate = item.createdAt ? new Date(item.createdAt.toDate()).toLocaleDateString() : 'Just now';
+    const reportDate = item.createdAt ? new Date(item.createdAt.toDate()).toLocaleDateString() : 'Just now';
 
-  const isMyReport = currentUser?.uid === item.reporterId;
-  const deleteButtonHTML = isMyReport ? `
-    <button class="delete-lost-found-btn absolute top-2 right-2 p-2 text-gray-400 hover:text-red-500 rounded-full bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm" data-id="${item.id}" aria-label="Delete report">
-      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
-    </button>` : '';
+    const isMyReport = currentUser?.uid === item.reporterId;
 
-  const contactSubject = `CampusMart: Inquiry about the ${item.title}`;
-  const contactBody = `Hi ${item.reporterName},%0D%0A%0D%0AI saw your listing for the ${item.reportType} item titled "${item.title}". I would like to inquire about it.%0D%0A%0D%0AThanks,`;
-  const contactButtonHTML = !isMyReport ? `
-    <a href="mailto:${item.reporterEmail}?subject=${contactSubject}&body=${contactBody}" class="contact-lost-found-btn mt-4 inline-block w-full text-center animated-btn px-4 py-2 bg-primary-600 text-white text-sm font-semibold rounded-lg">
-      Contact ${isLost ? 'Owner' : 'Finder'}
-    </a>` : `<p class="mt-4 text-center text-sm font-semibold text-gray-500 dark:text-gray-400 p-2 bg-gray-100 dark:bg-gray-700 rounded-lg">This is your report.</p>`;
+    let actionButtonHTML = '';
+    if (isMyReport) {
+        // Reporter sees management buttons
+        actionButtonHTML = `
+            <div class="flex items-center gap-2 mt-4">
+                <button class="resolve-lost-found-btn flex-grow animated-btn px-4 py-2 text-sm font-semibold rounded-lg ${isResolved ? 'bg-yellow-500 text-white' : 'bg-blue-500 text-white'}" data-id="${item.id}" data-status="${item.status}">
+                    ${isResolved ? 'Mark as Active' : 'Mark as Resolved'}
+                </button>
+                <button class="delete-lost-found-btn p-2 text-gray-400 hover:text-red-500 rounded-lg bg-gray-100 dark:bg-gray-700" data-id="${item.id}" aria-label="Delete report">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                </button>
+            </div>`;
+    } else {
+        // Others see the contact button
+        const contactSubject = `CampusMart: Inquiry about the ${item.title}`;
+        const contactBody = `Hi ${item.reporterName},%0D%0A%0D%0AI saw your listing for the ${item.reportType} item titled "${item.title}". I would like to inquire about it.%0D%0A%0D%0AThanks,`;
+        actionButtonHTML = `
+            <a href="mailto:${item.reporterEmail}?subject=${contactSubject}&body=${contactBody}" class="contact-lost-found-btn mt-4 inline-block w-full text-center animated-btn px-4 py-2 bg-primary-600 text-white text-sm font-semibold rounded-lg">
+                Contact ${isLost ? 'Owner' : 'Finder'}
+            </a>`;
+    }
 
-  card.innerHTML = `
-    <div class="relative">
-      <img src="${item.imageUrl || 'https://placehold.co/400x300/E0F2F7/777777?text=No+Image'}" alt="${item.title}" class="w-full h-52 object-cover">
-      <div class="absolute top-2 left-2 ${badgeColor} text-white text-xs font-bold px-2 py-1 rounded-full z-10">${badgeText}</div>
-      ${deleteButtonHTML}
-    </div>
-    <div class="p-5 flex flex-col flex-grow">
-      <h3 class="text-lg font-bold text-gray-900 dark:text-white truncate">${item.title}</h3>
-      <p class="text-xs text-gray-500 dark:text-gray-400">Reported by ${item.reporterName} on ${reportDate}</p>
-      <p class="text-gray-600 dark:text-gray-300 text-sm mt-3 flex-grow">${item.description}</p>
-      <div class="mt-4 pt-4 border-t border-gray-100 dark:border-gray-700 space-y-2 text-sm">
-        <p><strong class="text-gray-500 dark:text-gray-400">${isLost ? 'Last Seen At:' : 'Found At:'}</strong> ${item.location}</p>
-        ${!isLost ? `<p><strong class="text-gray-500 dark:text-gray-400">Collection Point:</strong> ${item.collectionPoint}</p>` : ''}
-      </div>
-      ${contactButtonHTML}
-    </div>
-    `;
-  return card;
+    card.innerHTML = `
+        <div class="relative">
+            <img src="${item.imageUrl || 'https://placehold.co/400x300/E0F2F7/777777?text=No+Image'}" alt="${item.title}" class="w-full h-52 object-cover ${isResolved ? 'grayscale' : ''}">
+            <div class="absolute top-2 left-2 ${badgeColor} text-white text-xs font-bold px-2 py-1 rounded-full z-10">${badgeText}</div>
+            ${isResolved ? `<div class="absolute top-2 right-2 bg-gray-700 text-white text-xs font-bold px-2 py-1 rounded-full z-10">RESOLVED</div>` : ''}
+        </div>
+        <div class="p-5 flex flex-col flex-grow">
+            <h3 class="text-lg font-bold text-gray-900 dark:text-white truncate">${item.title}</h3>
+            <p class="text-xs text-gray-500 dark:text-gray-400">Reported by ${item.reporterName} on ${reportDate}</p>
+            <p class="text-gray-600 dark:text-gray-300 text-sm mt-3 flex-grow">${item.description}</p>
+            <div class="mt-4 pt-4 border-t border-gray-100 dark:border-gray-700 space-y-2 text-sm">
+                <p><strong class="text-gray-500 dark:text-gray-400">${isLost ? 'Last Seen At:' : 'Found At:'}</strong> ${item.location}</p>
+                ${!isLost ? `<p><strong class="text-gray-500 dark:text-gray-400">Collection Point:</strong> ${item.collectionPoint}</p>` : ''}
+            </div>
+            ${actionButtonHTML}
+        </div>
+        `;
+    return card;
+};
+const handleLostFoundStatusChange = async (itemId, currentStatus) => {
+    const newStatus = currentStatus === 'active' ? 'resolved' : 'active';
+    try {
+        await db.collection('lost_and_found').doc(itemId).update({
+            status: newStatus
+        });
+        showMessage(`Item marked as ${newStatus}.`, 'success');
+        // The onSnapshot listener will automatically update the UI.
+    } catch (error) {
+        console.error("Error updating item status:", error);
+        showMessage("Failed to update status. Please try again.", "error");
+    }
 };
 
 const renderLostAndFoundModal = (reportType = 'lost') => {
@@ -1678,57 +1704,92 @@ const renderLostAndFoundModal = (reportType = 'lost') => {
 };
 
 const renderOrdersPage = () => {
-  const container = document.getElementById('orders-tab');
-  let content = `
-    ${getBackButtonHTML('Back')}
-    <h2 class="text-3xl font-bold text-gray-800 dark:text-white mb-8">My Order History</h2>`;
-  if (orders.length === 0) {
-    content += `<div class="bg-white dark:bg-gray-800 p-8 rounded-xl shadow-lg text-center"><p class="text-gray-500">You haven't placed any orders yet. Time to shop! 🛍️</p></div>`;
-  } else {
-    content += `<div class="space-y-6">${orders.map(order => {
-        // **FIX:** Check if order.createdAt exists before calling .toDate()
-        const orderDate = order.createdAt ? new Date(order.createdAt.toDate()).toLocaleString('en-US', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true }) : 'Just now';
-        return `
-      <div class="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-lg">
-        <div class="flex flex-col sm:flex-row justify-between items-start border-b border-gray-200 dark:border-gray-700 pb-4 mb-4 gap-2">
-          <div>
-            <p class="font-bold text-lg">Order Placed</p>
-            <p class="text-sm text-gray-500">${orderDate}</p>
-          </div>
-          <div class="text-left sm:text-right">
-            <p class="font-semibold text-lg">Total: ₹${order.total.toFixed(0)}</p>
-            <p class="text-xs text-gray-500 font-mono">ID: ${order.id}</p>
-          </div>
-        </div>
-        <div class="space-y-4">
-          ${order.items.map(item => {
-            const fullProduct = products.find(p => p.id === item.productId);
-            const sellerEmail = fullProduct ? fullProduct.sellerEmail : null;
-            return `
-              <div class="flex items-start sm:items-center justify-between gap-4 p-2 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors flex-col sm:flex-row">
-                <div class="flex items-center space-x-4 flex-grow cursor-pointer" data-action="view-details" data-id="${item.productId}">
-                  <img src="${item.imageUrl}" class="w-16 h-16 object-cover rounded-md flex-shrink-0">
-                  <div class="flex-grow">
-                    <p class="font-semibold">${item.name}</p>
-                    <p class="text-gray-500 font-semibold text-sm">₹${item.price.toFixed(0)}</p>
-                  </div>
-                </div>
-                <div class="flex-shrink-0 w-full sm:w-auto text-right pl-0 sm:pl-4">
-                  ${sellerEmail ?
-                  `<a href="mailto:${sellerEmail}?subject=Question about Campus Exchange Order: ${order.id}" class="contact-seller-btn inline-block px-4 py-2 bg-primary-100 dark:bg-primary-900 text-primary-700 dark:text-primary-300 text-sm font-semibold rounded-lg animated-btn">Contact Seller</a>` :
-                  `<button class="px-4 py-2 bg-gray-200 dark:bg-gray-600 text-gray-500 text-sm font-semibold rounded-lg cursor-not-allowed" disabled>Contact Unavailable</button>`
-                  }
-                </div>
-              </div>
-              `;
-            }).join('')}
-        </div>
-      </div>
-      `}).join('')}</div>`;
-  }
-  container.innerHTML = content;
-};
+    const container = document.getElementById('orders-tab');
+    let content = `
+        ${getBackButtonHTML('Back')}
+        <div class="flex justify-between items-center mb-8">
+            <h2 class="text-3xl font-bold text-gray-800 dark:text-white">My Order History</h2>
+            ${orders.length > 0 ? `
+                <button id="clear-order-history-btn" class="animated-btn px-4 py-2 bg-red-500 hover:bg-red-600 text-white text-sm font-semibold rounded-lg flex items-center gap-2">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                    Clear History
+                </button>
+            ` : ''}
+        </div>`;
 
+    if (orders.length === 0) {
+        content += `<div class="bg-white dark:bg-gray-800 p-8 rounded-xl shadow-lg text-center"><p class="text-gray-500">You haven't placed any orders yet. Time to shop! 🛍️</p></div>`;
+    } else {
+        content += `<div class="space-y-6">${orders.map(order => {
+            const orderDate = order.createdAt ? new Date(order.createdAt.toDate()).toLocaleString('en-US', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true }) : 'Just now';
+            return `
+            <div class="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-lg">
+                <div class="flex flex-col sm:flex-row justify-between items-start border-b border-gray-200 dark:border-gray-700 pb-4 mb-4 gap-2">
+                    <div>
+                        <p class="font-bold text-lg">Order Placed</p>
+                        <p class="text-sm text-gray-500">${orderDate}</p>
+                    </div>
+                    <div class="text-left sm:text-right">
+                        <p class="font-semibold text-lg">Total: ₹${order.total.toFixed(0)}</p>
+                        <p class="text-xs text-gray-500 font-mono">ID: ${order.id}</p>
+                    </div>
+                </div>
+                <div class="space-y-4">
+                    ${order.items.map(item => {
+                        const fullProduct = products.find(p => p.id === item.productId);
+                        const sellerEmail = fullProduct ? fullProduct.sellerEmail : null;
+                        return `
+                        <div class="flex items-start sm:items-center justify-between gap-4 p-2 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors flex-col sm:flex-row">
+                            <div class="flex items-center space-x-4 flex-grow cursor-pointer" data-action="view-details" data-id="${item.productId}">
+                                <img src="${item.imageUrl}" class="w-16 h-16 object-cover rounded-md flex-shrink-0">
+                                <div class="flex-grow">
+                                    <p class="font-semibold">${item.name}</p>
+                                    <p class="text-gray-500 font-semibold text-sm">₹${item.price.toFixed(0)}</p>
+                                </div>
+                            </div>
+                            <div class="flex-shrink-0 w-full sm:w-auto text-right pl-0 sm:pl-4">
+                                ${sellerEmail ?
+                                `<a href="mailto:${sellerEmail}?subject=Question about Campus Exchange Order: ${order.id}" class="contact-seller-btn inline-block px-4 py-2 bg-primary-100 dark:bg-primary-900 text-primary-700 dark:text-primary-300 text-sm font-semibold rounded-lg animated-btn">Contact Seller</a>` :
+                                `<button class="px-4 py-2 bg-gray-200 dark:bg-gray-600 text-gray-500 text-sm font-semibold rounded-lg cursor-not-allowed" disabled>Contact Unavailable</button>`
+                                }
+                            </div>
+                        </div>
+                        `;
+                    }).join('')}
+                </div>
+            </div>
+            `;
+        }).join('')}</div>`;
+    }
+    container.innerHTML = content;
+};
+const handleClearOrderHistory = () => {
+    if (!currentUser) return;
+
+    showConfirmModal("Are you sure you want to clear your entire order history? This action cannot be undone.", async () => {
+        try {
+            const batch = db.batch();
+            const ordersQuery = db.collection('orders').where('userId', '==', currentUser.uid);
+            const snapshot = await ordersQuery.get();
+
+            if (snapshot.empty) {
+                showMessage("No orders to clear.", "success");
+                return;
+            }
+
+            snapshot.docs.forEach(doc => {
+                batch.delete(doc.ref);
+            });
+
+            await batch.commit();
+            showMessage("Order history has been cleared.", "success");
+            // The onSnapshot listener will automatically update the UI
+        } catch (error) {
+            console.error("Error clearing order history:", error);
+            showMessage(`Failed to clear history: ${error.message}`, "error");
+        }
+    });
+};
 const renderMyListingsPage = () => {
   const container = document.getElementById('my-listings-tab');
   const myListings = products.filter(p => p.sellerId === currentUser.uid);
@@ -2075,14 +2136,71 @@ const handlePopupSendMessage = (e) => {
 
 // --- Authentication & Profile Logic ---
 const handleSignUp = async (e) => { e.preventDefault(); const name = document.getElementById('signup-name').value; const email = document.getElementById('signup-email').value; const password = document.getElementById('signup-password').value; if(password.length < 6) { showMessage('Password must be at least 6 characters.', 'error'); return; } try { const userCredential = await auth.createUserWithEmailAndPassword(email, password); await userCredential.user.updateProfile({ displayName: name }); await db.collection('users').doc(userCredential.user.uid).set({ uid: userCredential.user.uid, displayName: name, email: email, photoURL: null, createdAt: firebase.firestore.FieldValue.serverTimestamp() }); await userCredential.user.sendEmailVerification(); showMessage('Account created! Please check your email to verify.', 'success'); renderAuthModal('verify'); } catch (error) { showMessage(error.message, 'error'); } };
-const handleSignIn = async (e) => { e.preventDefault(); const email = document.getElementById('signin-email').value; const password = document.getElementById('signin-password').value; try { const userCredential = await auth.signInWithEmailAndPassword(email, password); if (!userCredential.user.emailVerified) { await auth.signOut(); showMessage('Please verify your email before signing in.', 'error'); renderAuthModal('verify'); } } catch (error) { showMessage(error.message, 'error'); } };
+const handleSignIn = async (e) => {
+    e.preventDefault();
+    const email = document.getElementById('signin-email').value;
+    const password = document.getElementById('signin-password').value;
+    try {
+        const userCredential = await auth.signInWithEmailAndPassword(email, password);
+        // If sign-in is successful but email is not verified...
+        if (!userCredential.user.emailVerified) {
+            // ...don't sign out. The onAuthStateChanged listener will now catch this
+            // unverified user and display the correct verification modal.
+            showMessage('Please verify your email to continue.', 'error');
+        }
+        // If the email IS verified, the onAuthStateChanged listener will handle the UI update automatically.
+    } catch (error) {
+        showMessage(error.message, 'error');
+    }
+};
+const handleResendVerification = async () => {
+  // Get a reference to the button in the UI
+  const btn = document.getElementById('resend-verification-btn');
+
+  // 1. Check if a user is actually signed in. This is crucial.
+  if (!auth.currentUser) {
+    showMessage('No user found. Please sign in again to receive a new link.', 'error');
+    renderAuthModal('signin'); // Send the user back to the sign-in screen
+    return;
+  }
+
+  // 2. Prevent the user from spamming the button if it's already disabled
+  if (btn.disabled) return;
+
+  try {
+    // 3. Disable the button and show a loading spinner for user feedback
+    btn.disabled = true;
+    btn.innerHTML = `<div class="animate-spin rounded-full h-5 w-5 border-b-2 border-white mx-auto"></div>`;
+
+    // 4. Call the core Firebase Authentication method to send the email
+    await auth.currentUser.sendEmailVerification();
+    showMessage('A new verification email has been sent. Please check your inbox.', 'success');
+
+  } catch (error) {
+    // 5. Handle potential errors gracefully
+    if (error.code === 'auth/too-many-requests') {
+      showMessage('Too many requests. Please wait before trying again.', 'error');
+    } else {
+      showMessage(`Error sending email: ${error.message}`, 'error');
+    }
+  } finally {
+    // 6. Set a cooldown period to prevent spam, then re-enable the button
+    setTimeout(() => {
+      // Check if the button still exists before trying to change it
+      if (btn) {
+        btn.disabled = false;
+        btn.innerHTML = 'Resend Verification Email';
+      }
+    }, 10000); // 10-second cooldown
+  }
+};
 const handleSignOut = () => { showConfirmModal("Are you sure you want to sign out?", () => auth.signOut()); };
-const handleUpdateProfile = async (e) => { e.preventDefault(); const nameInput = document.getElementById('profile-name'); if (!validateInput(nameInput, val => val.trim().length > 0, 'Name cannot be empty.')) return; const newName = nameInput.value; if (newName === currentUser.displayName) return; const btn = document.getElementById('update-profile-btn'); btn.disabled = true; btn.innerHTML = `<div class="animate-spin rounded-full h-5 w-5 border-b-2 border-white mx-auto"></div>`; try { await currentUser.updateProfile({ displayName: newName }); const userDocRef = db.collection('users').doc(currentUser.uid); const productsRef = db.collection('products').where('sellerId', '==', currentUser.uid); const productsSnapshot = await productsRef.get(); const batch = db.batch(); batch.update(userDocRef, { displayName: newName }); productsSnapshot.docs.forEach(doc => { batch.update(doc.ref, { sellerName: newName }); }); await batch.commit(); showMessage('Profile updated successfully!', 'success'); renderHeaderActions(); renderProfilePage(); } catch (error) { showMessage('Error updating profile: ' + error.message, 'error'); } finally { btn.disabled = false; btn.innerHTML = 'Save Changes'; } };
+const handleUpdateProfile = async (e) => { e.preventDefault(); const nameInput = document.getElementById('profile-name'); if (!validateInput(nameInput, val => val.trim().length > 0, 'Name cannot be empty.')) return; const newName = nameInput.value; if (newName === currentUser.displayName) return; const btn = document.getElementById('update-profile-btn'); btn.disabled = true; btn.innerHTML = `<div class="animate-spin rounded-full h-5 w-5 border-b-2 border-white mx-auto"></div>`; try { await currentUser.updateProfile({ displayName: newName }); const userDocRef = db.collection('users').doc(currentUser.uid); const productsRef = db.collection('products').where('sellerId', '==', currentUser.uid); const productsSnapshot = await productsRef.get();; batch.update(userDocRef, { displayName: newName }); productsSnapshot.docs.forEach(doc => { batch.update(doc.ref, { sellerName: newName }); }); await batch.commit(); showMessage('Profile updated successfully!', 'success'); renderHeaderActions(); renderProfilePage(); } catch (error) { showMessage('Error updating profile: ' + error.message, 'error'); } finally { btn.disabled = false; btn.innerHTML = 'Save Changes'; } };
 
 const handleUpdateProfilePicture = async () => {
   const btn = document.getElementById('save-pfp-btn');
   btn.disabled = true;
-  btn.innerHTML = `<div class="animate-spin rounded-full h-5 w-5 border-b-2 border-white mx-auto"></div>`;
+  btn.innerHTML = `<div class="animate const batch = db.batch()-spin rounded-full h-5 w-5 border-b-2 border-white mx-auto"></div>`;
 
   let photoURL;
   try {
@@ -2702,6 +2820,20 @@ auth.onAuthStateChanged(user => {
 });
 
 document.body.addEventListener('click', (e) => {
+     // Add this for the "Clear Order History" button
+    if (e.target.closest('#clear-order-history-btn')) {
+        handleClearOrderHistory();
+        return;
+    }
+
+    // Add this for the "Mark as Resolved" button
+    const resolveBtn = e.target.closest('.resolve-lost-found-btn');
+    if (resolveBtn) {
+        const { id, status } = resolveBtn.dataset;
+        handleLostFoundStatusChange(id, status);
+        return;
+    }
+
   const navItem = e.target.closest('[data-tab]');
   if(navItem) setActiveTab(navItem.dataset.tab);
 
