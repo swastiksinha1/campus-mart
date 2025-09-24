@@ -2444,59 +2444,63 @@ const addToCart = (productId) => {
 };
 const removeFromCart = async (productId) => { if (!currentUser) return; await db.collection('carts').doc(currentUser.uid).collection('items').doc(productId).delete(); showMessage('Item removed from cart.', 'success'); };
 const handleCheckout = async () => {
-    const confirmBtn = document.getElementById('confirm-payment-btn');
-    confirmBtn.disabled = true;
-    confirmBtn.innerHTML = `<div class="animate-spin rounded-full h-5 w-5 border-b-2 border-white mx-auto"></div>`;
+    const confirmBtn = document.getElementById('confirm-payment-btn');
+    confirmBtn.disabled = true;
+    confirmBtn.innerHTML = `<div class="animate-spin rounded-full h-5 w-5 border-b-2 border-white mx-auto"></div>`;
 
-    try {
-        await new Promise(res => setTimeout(res, 1500)); // Simulate payment processing
-        const cartItems = Object.values(cart);
-        const total = cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+    try {
+        await new Promise(res => setTimeout(res, 1500)); // Simulate payment processing
+        const cartItems = Object.values(cart);
+        const total = cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
 
-        const orderData = {
-            userId: currentUser.uid,
-            userName: currentUser.displayName,
-            createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-            total: total,
-            items: cartItems.map(({ id, ...rest }) => ({ ...rest }))
-        };
-        
-        // This batch will now succeed because of your new security rule
-        const batch = db.batch();
+        const orderData = {
+            userId: currentUser.uid,
+            userName: currentUser.displayName,
+            createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+            total: total,
+            items: cartItems.map(({ id, ...rest }) => ({ ...rest }))
+        };
+        
+        // A batch transaction ensures all actions succeed or none do.
+        const batch = db.batch();
 
-        // Action 1: Create the new order document
-        const orderRef = db.collection('orders').doc(); // Create a reference first
-        batch.set(orderRef, orderData);
+        // Action 1: Create the new order document for the buyer.
+        const orderRef = db.collection('orders').doc();
+        batch.set(orderRef, orderData);
 
-        // Action 2: Update the status of each product to 'sold'
-        cartItems.forEach(item => {
-            const productRef = db.collection('products').doc(item.id);
-            batch.update(productRef, { status: 'sold' });
-        });
+        // Action 2 (Removed): The buyer cannot update the seller's product.
+        // This was the source of the permission error. In a real app, a seller
+        // would confirm the sale, or a backend function would handle this.
+        /*
+        cartItems.forEach(item => {
+            const productRef = db.collection('products').doc(item.id);
+            batch.update(productRef, { status: 'sold' });
+        });
+        */
 
-        // Action 3: Clear the user's cart
-        const cartItemsRef = db.collection('carts').doc(currentUser.uid).collection('items');
-        const cartSnapshot = await cartItemsRef.get();
-        cartSnapshot.forEach(doc => {
-            batch.delete(doc.ref);
-        });
+        // Action 3: Clear the user's cart.
+        const cartItemsRef = db.collection('carts').doc(currentUser.uid).collection('items');
+        const cartSnapshot = await cartItemsRef.get();
+        cartSnapshot.forEach(doc => {
+            batch.delete(doc.ref);
+        });
 
-        // Atomically commit all changes
-        await batch.commit();
-        
-        checkoutModal.classList.remove('show');
-        triggerConfetti();
-        showMessage('Purchase complete! The seller has been notified.', 'success');
-        setActiveTab('orders');
+        // Atomically commit the allowed changes.
+        await batch.commit();
+        
+        checkoutModal.classList.remove('show');
+        triggerConfetti();
+        showMessage('Purchase complete! The seller has been notified.', 'success');
+        setActiveTab('orders');
 
-    } catch (error) {
-        showMessage('Payment failed. Please try again. ' + error.message, 'error');
-    } finally {
-        confirmBtn.disabled = false;
-        confirmBtn.innerHTML = 'Pay Now';
-    }
+    } catch (error) {
+        // This error message will now only trigger for other unexpected issues.
+        showMessage('Payment failed. Please try again. ' + error.message, 'error');
+    } finally {
+        confirmBtn.disabled = false;
+        confirmBtn.innerHTML = 'Pay Now';
+    }
 };
-
 
 // --- TRADE/BARTER LOGIC ---
 
