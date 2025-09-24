@@ -2471,12 +2471,12 @@ const handleCheckout = async () => {
         // Action 2 (Removed): The buyer cannot update the seller's product.
         // This was the source of the permission error. In a real app, a seller
         // would confirm the sale, or a backend function would handle this.
-        /*
+        
         cartItems.forEach(item => {
             const productRef = db.collection('products').doc(item.id);
             batch.update(productRef, { status: 'sold' });
         });
-        */
+        
 
         // Action 3: Clear the user's cart.
         const cartItemsRef = db.collection('carts').doc(currentUser.uid).collection('items');
